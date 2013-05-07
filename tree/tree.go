@@ -60,7 +60,7 @@ func (t *tree) Write(p []byte) (nn int, err error) {
 	if len(t.overflow) > 0 {
 		i := t.size - len(t.overflow)
 		t.leaves <- append(t.overflow, p[:i]...)
-		t.overflow = make([]byte, 0, t.size-1)
+		t.overflow = nil
 	}
 	j = i + t.size
 	for j <= nn {
@@ -77,21 +77,22 @@ func (t *tree) Write(p []byte) (nn int, err error) {
 func (t *tree) Reset() {
 	t.overflow  = make([]byte, 0, t.size - 1)
 	t.leaves = make(chan []byte)
-	t.sum   = make(chan []byte, 1)
+	t.sum   = make(chan []byte)
 	go t.processLevel(t.leaves, t.sum)
 }
 
 func (t *tree) Sum(b []byte) []byte {
 	t.leaves <- nil
-	sum := <- t.sum
-	return sum
+	return <- t.sum
 }
 
+// If it was possible to for tree to hold multiple instances of a Hash
+// then the multiple levels could be hashed simultaneously, if the 
+// channels were buffered
 func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 	var left []byte
 	var right []byte
 	var egress chan []byte
-
 	left = <-ingress
 	for right = range ingress {
 		if right == nil {
