@@ -1,4 +1,3 @@
-// Copyright (c) 2013 Emery Hemingway
 // The test vectors are from
 // http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html#anchor17
 
