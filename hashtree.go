@@ -34,12 +34,14 @@ package hashtree
 
 import (
 	"hash"
+	"sync"
 )
 
 var innerPrefix = []byte{byte(1)}
 
 type tree struct {
 	digest   hash.Hash
+	mu       sync.Mutex // protects digest when GOMAXPROCS > 1
 	size     int
 	overflow []byte
 	leaves   chan []byte
@@ -105,11 +107,12 @@ func (t *tree) Sum(b []byte) []byte {
 
 // If it was possible to for tree to hold multiple instances of a Hash
 // then the multiple levels could be hashed simultaneously, if the
-// channels were buffered (I think). -EH
+// channels were buffered and the mutex loosened (I think). -EH
 func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 	var left []byte
 	var right []byte
 	var egress chan []byte
+	var sum []byte
 	left = <-ingress
 	for right = range ingress {
 		if right == nil {
@@ -117,12 +120,15 @@ func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 		} else {
 			egress = make(chan []byte)
 			go t.processLevel(egress, final)
-
+			
+			t.mu.Lock()
 			t.digest.Reset()
 			t.digest.Write(innerPrefix)
 			t.digest.Write(left)
 			t.digest.Write(right)
-			egress <- t.digest.Sum(nil)
+			sum = t.digest.Sum(nil)
+			t.mu.Unlock()
+			egress <- sum
 			break
 		}
 	}
@@ -131,11 +137,14 @@ func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 		if left != nil {
 			right := <-ingress
 			if right != nil {
+				t.mu.Lock()
 				t.digest.Reset()
 				t.digest.Write(innerPrefix)
 				t.digest.Write(left)
 				t.digest.Write(right)
-				egress <- t.digest.Sum(nil)
+				sum = t.digest.Sum(nil)
+				t.mu.Unlock()
+				egress <- sum
 			} else {
 				egress <- left
 				egress <- nil

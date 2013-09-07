@@ -4,11 +4,12 @@
 package hashtree_test
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/base32"
 	"github.com/3M3RY/go-hashtree"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 type treeTest struct {
@@ -32,16 +33,16 @@ func init() {
 	golden = append(golden, treeTest{"a buffer with a single zero byte", out, in})
 
 	out = "ORWD6TJINRJR4BS6RL3W4CWAQ2EDDRVU"
-	in = make([]byte, 0, 1024)
+	in = make([]byte, 1024)
 	for i := 0; i < 1024; i++ {
-		in = append(in, byte('A'))
+		in[i] = byte('A')
 	}
 	golden = append(golden, treeTest{"a buffer with 1024 'A' characters", out, in})
 
 	out = "UUHHSQPHQXN5X6EMYK6CD7IJ7BHZTE77"
-	in = make([]byte, 0, 1025)
+	in = make([]byte, 1025)
 	for i := 0; i < 1025; i++ {
-		in = append(in, byte('A'))
+		in[i] = byte('A')
 	}
 	golden = append(golden, treeTest{"a buffer with 1025 'A' characters", out, in})
 }
@@ -67,15 +68,19 @@ func TestGolden(t *testing.T) {
 }
 
 func BenchmarkGolden(b *testing.B) {
-	b.StopTimer()
+	rand.Seed(time.Now().UnixNano())
+	byt := byte(rand.Int())
+	l := b.N
+	buf := make([]byte, l)
+	for i := 0; i < l; i++ {
+		buf[i] = byt
+	}
+
 	base := sha1.New()
 	t := hashtree.New(base)
-	var buf bytes.Buffer
-	for _, g := range golden {
-		buf.Write([]byte(g.in))
-	}
-	b.StartTimer()
+
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		t.Write(buf.Bytes())
+		t.Write(buf)
 	}
 }
