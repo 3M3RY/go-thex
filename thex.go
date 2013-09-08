@@ -13,24 +13,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package hashtree implements hash tree computation as defined in the following:
+// Package thex implements hash tree computation as defined in the following:
 // http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html
 // R. C. Merkle, A digital signature based on a conventional encryption function, Crypto '87
 //
-// hashtree is hash algorithm agnostic, New returns a new hash.Hash interface
+// thex is hash algorithm agnostic, New returns a new hash.Hash interface
 // with a the hash.Hash argument as the internal algorithm.
 //
-// Do not directly pass the data being hashed, ash the source data in chunks
-// and then pass those chunks to Write. The recommended chunk size is 1024 bytes.
+// Do not directly pass the data being hashed, write data chunks prepended with a 
+// 0x00 byte to an external hash function, and write the resulting digests to the 
+// tree. The recommended chunk size is 1024 bytes.
 //
-// Do note that this implementation follows the Tree Hash EXchange format
-// recommendation and prepends each leaf hash with a zero byte. This is to
-// decrease the collision rate between external chunk hashes and internal
-// leaf hashes. Be aware this policy may be different from other tree specs.
+// thex prepends each leaf hash with an 0x01 byte. This is to decrease the chance
+// of collisions between external hashes and internal node hashes.
 //
-// Because Write takes hash leaves rather than chunks of data, intermediate
-// leaf levels may be verified.
-package hashtree
+// Because Write takes hash digests rather than chunks of data, intermediate
+// node levels may be verified as well, Just write a complete row of intermediate 
+// node digests and call Sum().
+package thex
 
 import (
 	"hash"

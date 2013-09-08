@@ -1,12 +1,12 @@
 // The test vectors are from
 // http://web.archive.org/web/20080316033726/http://www.open-content.net/specs/draft-jchapweske-thex-02.html#anchor17
 
-package hashtree_test
+package thex_test
 
 import (
 	"crypto/sha1"
 	"encoding/base32"
-	"github.com/3M3RY/go-hashtree"
+	"github.com/3M3RY/go-thex"
 	"math/rand"
 	"testing"
 	"time"
@@ -51,7 +51,7 @@ func TestGolden(t *testing.T) {
 	for i := 0; i < len(golden); i++ {
 		g := golden[i]
 		base := sha1.New()
-		tree := hashtree.New(sha1.New())
+		tree := thex.New(sha1.New())
 		for j := 0; j < 4; j++ {
 			base.Write(g.in)
 			leaf := base.Sum(nil)
@@ -70,17 +70,17 @@ func TestGolden(t *testing.T) {
 func BenchmarkGolden(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
 	byt := byte(rand.Int())
-	l := b.N
-	buf := make([]byte, l)
-	for i := 0; i < l; i++ {
+	buf := make([]byte, 1024)
+	for i := 0; i < 1024; i++ {
 		buf[i] = byt
 	}
 
 	base := sha1.New()
-	t := hashtree.New(base)
+	t := thex.New(base)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		t.Write(buf)
 	}
+	t.Sum(nil)
 }
