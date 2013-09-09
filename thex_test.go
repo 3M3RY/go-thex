@@ -75,8 +75,7 @@ func BenchmarkGolden(b *testing.B) {
 		buf[i] = byt
 	}
 
-	base := sha1.New()
-	t := thex.New(base)
+	t := thex.New(sha1.New())
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

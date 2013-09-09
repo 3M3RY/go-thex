@@ -100,9 +100,9 @@ func (t *tree) Reset() {
 	go t.processLevel(t.leaves, t.sum)
 }
 
-func (t *tree) Sum(b []byte) []byte {
+func (t *tree) Sum(in []byte) []byte {
 	t.leaves <- nil
-	return <-t.sum
+	return append(in, <-t.sum...)
 }
 
 // If it was possible to for tree to hold multiple instances of a Hash
@@ -112,7 +112,7 @@ func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 	var left []byte
 	var right []byte
 	var egress chan []byte
-	var sum []byte
+	sum := make([]byte, t.size)
 	left = <-ingress
 	for right = range ingress {
 		if right == nil {
@@ -126,7 +126,7 @@ func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 			t.digest.Write(innerPrefix)
 			t.digest.Write(left)
 			t.digest.Write(right)
-			sum = t.digest.Sum(nil)
+			sum = t.digest.Sum(sum[:0])
 			t.mu.Unlock()
 			egress <- sum
 			break
@@ -142,7 +142,7 @@ func (t *tree) processLevel(ingress chan []byte, final chan []byte) {
 				t.digest.Write(innerPrefix)
 				t.digest.Write(left)
 				t.digest.Write(right)
-				sum = t.digest.Sum(nil)
+				sum = t.digest.Sum(sum[:0])
 				t.mu.Unlock()
 				egress <- sum
 			} else {
